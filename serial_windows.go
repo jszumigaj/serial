@@ -59,7 +59,7 @@ func openPort(name string, baud int, databits byte, parity Parity, stopbits Stop
 		}
 	}()
 
-	if err = setCommState(h, baud, databits, parity, stopbits); err != nil {
+	if err = setCommState(h, baud, databits, parity, stopbits, true); err != nil {
 		return nil, err
 	}
 	if err = setupComm(h, 64, 64); err != nil {
@@ -171,12 +171,23 @@ func getProcAddr(lib syscall.Handle, name string) uintptr {
 	return addr
 }
 
-func setCommState(h syscall.Handle, baud int, databits byte, parity Parity, stopbits StopBits) error {
+func setCommState(h syscall.Handle, baud int, databits byte, parity Parity, stopbits StopBits, rtsFlowControl bool) error {
+	// https://docs.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-dcb
 	var params structDCB
 	params.DCBlength = uint32(unsafe.Sizeof(params))
 
-	params.flags[0] = 0x01  // fBinary
-	params.flags[0] |= 0x10 // Assert DSR
+	params.flags[0] = 0x01 // fBinary
+
+	// Specifies the DTR (data-terminal-ready) flow control.
+	params.flags[0] |= 0x10 // selected DTR_CONTROL_ENABLE 0x01 - Enables the DTR line when the device is opened and leaves it on.
+
+	if rtsFlowControl {
+		// The RTS (request-to-send) flow control.
+		// selected	RTS_CONTROL_TOGGLE		0x03	Specifies that the RTS line will be high if bytes are available for transmission. After all buffered bytes have been sent, the RTS line will be low.
+		params.flags[1] |= 0x10 // RTSControl1
+		params.flags[1] |= 0x20 // RTSControl2
+
+	}
 
 	params.BaudRate = uint32(baud)
 
