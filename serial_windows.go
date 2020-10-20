@@ -133,6 +133,19 @@ func (p *Port) Flush() error {
 	return purgeComm(p.fd)
 }
 
+// Modem Status Flags
+const MS_CTS_ON uint = 0x0010
+const MS_DSR_ON uint = 0x0020
+const MS_RING_ON uint = 0x0040
+const MS_RLSD_ON uint = 0x0080
+
+// GetComModemStatus Retrieves the modem control-register values.
+func (p *Port) GetComModemStatus() (uint, error) {
+
+	status, err := getCommModemStatus(p.fd)
+	return status, err
+}
+
 var (
 	nSetCommState,
 	nSetCommTimeouts,
@@ -142,6 +155,7 @@ var (
 	nCreateEvent,
 	nResetEvent,
 	nPurgeComm,
+	nGetCommModemStatus,
 	nFlushFileBuffers uintptr
 )
 
@@ -160,6 +174,7 @@ func init() {
 	nCreateEvent = getProcAddr(k32, "CreateEventW")
 	nResetEvent = getProcAddr(k32, "ResetEvent")
 	nPurgeComm = getProcAddr(k32, "PurgeComm")
+	nGetCommModemStatus = getProcAddr(k32, "GetCommModemStatus") //BOOL GetCommModemStatus(HANDLE  hFile, LPDWORD lpModemStat);
 	nFlushFileBuffers = getProcAddr(k32, "FlushFileBuffers")
 }
 
@@ -335,4 +350,13 @@ func getOverlappedResult(h syscall.Handle, overlapped *syscall.Overlapped) (int,
 	}
 
 	return n, nil
+}
+
+func getCommModemStatus(h syscall.Handle) (uint, error) {
+	var modemStat uint
+	r, _, err := syscall.Syscall(nGetCommModemStatus, 1, uintptr(h), uintptr(unsafe.Pointer(&modemStat)), 0)
+	if r == 0 {
+		return 0, err
+	}
+	return modemStat, nil
 }
