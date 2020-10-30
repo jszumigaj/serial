@@ -37,7 +37,7 @@ type structTimeouts struct {
 	WriteTotalTimeoutConstant   uint32
 }
 
-func openPort(name string, baud int, databits byte, parity Parity, stopbits StopBits, readTimeout time.Duration) (p *Port, err error) {
+func openPort(name string, baud int, databits byte, parity Parity, stopbits StopBits, readTimeout time.Duration, rtsFlowControl bool) (p *Port, err error) {
 	if len(name) > 0 && name[0] != '\\' {
 		name = "\\\\.\\" + name
 	}
@@ -59,7 +59,7 @@ func openPort(name string, baud int, databits byte, parity Parity, stopbits Stop
 		}
 	}()
 
-	if err = setCommState(h, baud, databits, parity, stopbits, true); err != nil {
+	if err = setCommState(h, baud, databits, parity, stopbits, rtsFlowControl); err != nil {
 		return nil, err
 	}
 	if err = setupComm(h, 64, 64); err != nil {
