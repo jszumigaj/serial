@@ -354,7 +354,7 @@ func getOverlappedResult(h syscall.Handle, overlapped *syscall.Overlapped) (int,
 
 func getCommModemStatus(h syscall.Handle) (uint, error) {
 	var modemStat uint
-	r, _, err := syscall.Syscall(nGetCommModemStatus, 1, uintptr(h), uintptr(unsafe.Pointer(&modemStat)), 0)
+	r, _, err := syscall.Syscall(nGetCommModemStatus, 2, uintptr(h), uintptr(unsafe.Pointer(&modemStat)), 0)
 	if r == 0 {
 		return 0, err
 	}
